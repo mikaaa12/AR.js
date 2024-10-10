@@ -13,10 +13,10 @@
     <a-scene 
         vr-mode-ui="enabled: false" 
         embedded
-        arjs="sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: false;">
+        arjs="sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: true;">
         <!-- Kamera dengan dukungan GPS -->
         <a-camera gps-camera rotation-reader></a-camera>
-        <!-- Objek 3D yang akan muncul di lokasi yang diinputkan -->
+        <!-- Objek 3D -->
         <a-box
             id="ar-box"
             gps-entity-place="latitude: 0; longitude: 0;"
@@ -46,6 +46,7 @@
         if (!isNaN(lat) && !isNaN(lon)) {
           // Set latitude and longitude attributes
           entity.setAttribute('gps-entity-place', `latitude: ${lat}; longitude: ${lon};`);
+          
           // Make the entity visible
           entity.setAttribute('visible', 'true');
 
@@ -56,9 +57,14 @@
         }
       }
 
-      // Event listener to make sure the entity gets updated correctly once GPS has enough accuracy
+      // Listen for when the entity is added to the scene
       window.addEventListener('gps-entity-place-added', (ev) => {
           console.log('Entity added at: ', ev.detail.latitude, ev.detail.longitude);
+      });
+
+      // Listen for when the entity is removed from the scene
+      window.addEventListener('gps-entity-place-removed', (ev) => {
+          console.log('Entity removed at: ', ev.detail.latitude, ev.detail.longitude);
       });
     </script>
 </body>
