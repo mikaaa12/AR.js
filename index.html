@@ -39,19 +39,27 @@
 
     <script>
       function setLocation() {
-        const lat = document.getElementById('latitude').value;
-        const lon = document.getElementById('longitude').value;
+        const lat = parseFloat(document.getElementById('latitude').value);
+        const lon = parseFloat(document.getElementById('longitude').value);
         const entity = document.getElementById('ar-box');
 
-        if (lat && lon) {
+        if (!isNaN(lat) && !isNaN(lon)) {
           // Set latitude and longitude attributes
           entity.setAttribute('gps-entity-place', `latitude: ${lat}; longitude: ${lon};`);
           // Make the entity visible
           entity.setAttribute('visible', 'true');
+
+          // Log to check if the coordinates are being set correctly
+          console.log(`Object set at latitude: ${lat}, longitude: ${lon}`);
         } else {
           alert('Please enter both latitude and longitude.');
         }
       }
+
+      // Event listener to make sure the entity gets updated correctly once GPS has enough accuracy
+      window.addEventListener('gps-entity-place-added', (ev) => {
+          console.log('Entity added at: ', ev.detail.latitude, ev.detail.longitude);
+      });
     </script>
 </body>
 </html>
