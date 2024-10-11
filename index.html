@@ -62,10 +62,15 @@
           console.log('Entity added at: ', ev.detail.latitude, ev.detail.longitude);
       });
 
-      // Listen for when the entity is removed from the scene
-      window.addEventListener('gps-entity-place-removed', (ev) => {
-          console.log('Entity removed at: ', ev.detail.latitude, ev.detail.longitude);
+      // Additional listener to check if GPS data is available
+      document.querySelector('a-scene').addEventListener('loaded', (ev) => {
+          console.log('AR.js scene loaded');
       });
+
+      document.querySelector('[gps-camera]').addEventListener('gps-camera-update-position', (event) => {
+          console.log('GPS Camera position updated:', event.detail.position);
+      });
+
     </script>
 </body>
 </html>
