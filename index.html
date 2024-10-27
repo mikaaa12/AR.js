@@ -136,7 +136,7 @@
         (position) => {
           currentLat = position.coords.latitude;
           currentLon = position.coords.longitude;
-          createEntity(currentLat, currentLon, "Your Location");
+          //createEntity(currentLat, currentLon, "Your Location");
           updateCurrentLocation(currentLat, currentLon);
           console.log(`Your Location: ${currentLat}, ${currentLon}`);
         },
@@ -232,11 +232,7 @@
             userLocationEntity.parentNode.removeChild(userLocationEntity);
           }
 
-          userLocationEntity = createEntity(
-            currentLat,
-            currentLon,
-            "Your Location"
-          );
+          //userLocationEntity = createEntity(currentLat,currentLon,"Your Location");
           console.log(`Updated Location: ${currentLat}, ${currentLon}`);
           locations.forEach(location => {
             const distance = calculateDistance(location.latitude, location.longitude);
@@ -254,7 +250,6 @@
         }
       );
 
-      
     </script>
   </body>
 </html>
