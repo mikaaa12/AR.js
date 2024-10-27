@@ -232,8 +232,10 @@
         console.log(`Updated Location: ${currentLat}, ${currentLon}`);
         locations.forEach(location => {
         const distance = calculateDistance(location.latitude, location.longitude);
-        if (distance >= 2) { // threshold, bisa disesuaikan
+        if (distance <= 2) { // threshold, bisa disesuaikan
           const isArrive = checkArrival(location.latitude, location.longitude, distance);
+          sendLocationToBackend(currentLat, currentLon, location.latitude, location.longitude, distance, isArrive);
+        }else{
           sendLocationToBackend(currentLat, currentLon, location.latitude, location.longitude, distance, isArrive);
         }
       });
@@ -248,6 +250,7 @@
         maximumAge: 3000,
       }
     );
+
 
   </script>
 </body>
