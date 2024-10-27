@@ -120,7 +120,7 @@
       (position) => {
         currentLat = position.coords.latitude;
         currentLon = position.coords.longitude;
-        createEntity(currentLat, currentLon, "Your Location");
+        //createEntity(currentLat, currentLon, "Your Location");
         updateCurrentLocation(currentLat, currentLon);
         console.log(`Your Location: ${currentLat}, ${currentLon}`);
       },
@@ -211,12 +211,6 @@
         currentLat = position.coords.latitude;
         currentLon = position.coords.longitude;
         updateCurrentLocation(currentLat, currentLon);
-
-        if (!userLocationEntity) {
-          userLocationEntity = createEntity(currentLat, currentLon, "Your Location");
-        } else {
-          userLocationEntity.setAttribute("gps-entity-place", `latitude: ${currentLat}; longitude: ${currentLon};`);
-        }
 
         console.log(`Updated Location: ${currentLat}, ${currentLon}`);
         locations.forEach(location => {
