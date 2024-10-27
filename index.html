@@ -144,7 +144,7 @@
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 0,
+        maximumAge: 3000,
       }
     );
 
@@ -218,18 +218,34 @@
 
     navigator.geolocation.watchPosition(
       (position) => {
+        const newLat = position.coords.latitude;
+        const newLon = position.coords.longitude;
         currentLat = position.coords.latitude;
         currentLon = position.coords.longitude;
         updateCurrentLocation(currentLat, currentLon);
 
+        // console.log(`Updated Location: ${currentLat}, ${currentLon}`);
+        // locations.forEach(location => {
+        //   const distance = calculateDistance(location.latitude, location.longitude);
+        //   if (distance > 2) { // threshold, bisa disesuaikan
+        //   const isArrive = checkArrival(location.latitude, location.longitude, distance);
+        //   sendLocationToBackend(currentLat, currentLon, location.latitude, location.longitude, distance, isArrive);
+        // }
+        // });
+        if (Math.abs(newLat - currentLat) > 0.0001 || Math.abs(newLon - currentLon) > 0.0001) {
+        currentLat = newLat;
+        currentLon = newLon;
+        updateCurrentLocation(currentLat, currentLon);
+
         console.log(`Updated Location: ${currentLat}, ${currentLon}`);
         locations.forEach(location => {
-          const distance = calculateDistance(location.latitude, location.longitude);
-          if (distance > 2) { // threshold, bisa disesuaikan
+        const distance = calculateDistance(location.latitude, location.longitude);
+        if (distance > 2) { // threshold, bisa disesuaikan
           const isArrive = checkArrival(location.latitude, location.longitude, distance);
           sendLocationToBackend(currentLat, currentLon, location.latitude, location.longitude, distance, isArrive);
         }
-        });
+      });
+    }
       },
       (err) => {
         console.error("Error watching location: ", err);
@@ -237,10 +253,9 @@
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 0,
+        maximumAge: 3000,
       }
     );
-
 
   </script>
 </body>
