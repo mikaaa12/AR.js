@@ -10,8 +10,8 @@
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 </head>
 <body style="margin: 0; overflow: hidden;">
-    <a-scene 
-        vr-mode-ui="enabled: false" 
+    <a-scene
+        vr-mode-ui="enabled: false"
         embedded
         arjs="sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: true;">
         <a-camera gps-camera rotation-reader></a-camera>
@@ -19,12 +19,12 @@
 
     <!-- Info lokasi sekarang -->
     <div id="current-location" style="position: absolute; bottom: 10px; left: 10px; background: white; padding: 10px; z-index: 10;">
-        <p>Current Location:</p>
+        <p>Current Location: </p>
         <p>Latitude: <span id="current-lat">-</span></p>
         <p>Longitude: <span id="current-lon">-</span></p>
-        <p>Distance to Input Location: <span id="distance">-</span> meters</p>
+        <p>Distance to Last Location: <span id="distance">-</span> meters</p>
     </div>
-    
+
     <!-- Form untuk input latitude dan longitude -->
     <div style="position: absolute; top: 10px; left: 10px; background: white; padding: 10px; z-index: 10;">
         <label>Latitude:</label>
@@ -39,7 +39,8 @@
 
     <script>
         const locations = [];
-        let currentLat, currentLon;
+        let currentLat = null;
+        let currentLon = null;
 
         function addLocation() {
             const lat = parseFloat(document.getElementById('latitude').value);
@@ -49,7 +50,8 @@
                 // Simpan lokasi ke dalam array
                 locations.push({ latitude: lat, longitude: lon });
                 createEntity(lat, lon, "Here");
-                calculateAndDisplayDistance(lat, lon); // Hitung jarak dan tampilkan
+                calculateDistance(lat, lon); // Hitung jarak ke lokasi terakhir
+                checkArrival(lat, lon); // Periksa kedatangan
                 console.log(`Added location: ${lat}, ${lon}`);
             } else {
                 alert('Please enter both latitude and longitude.');
@@ -62,7 +64,7 @@
             // Membuat elemen <a-box> baru untuk lokasi
             const box = document.createElement('a-box');
             box.setAttribute('gps-entity-place', `latitude: ${lat}; longitude: ${lon};`);
-            box.setAttribute('scale', '10 10 10');
+            box.setAttribute('scale', '5 5 5');
             box.setAttribute('material', 'color: red;');
             box.setAttribute('visible', 'true');
 
@@ -77,6 +79,9 @@
             // Tambahkan objek dan teks ke dalam scene
             scene.appendChild(box);
             scene.appendChild(text);
+
+            // Kembalikan elemen box untuk referensi
+            return box;
         }
 
         function clearLocations() {
@@ -87,12 +92,9 @@
             const entities = scene.querySelectorAll('a-box, a-text');
             entities.forEach(entity => entity.parentNode.removeChild(entity));
             console.log('All locations cleared');
-            
-            // Reset jarak
-            document.getElementById('distance').innerText = '-';
         }
 
-        // Fungsi untuk menampilkan lokasi perangkat saat ini
+        // Fungsi untuk menampilkan lokasi perangkat saat ini dengan label "Your Location"
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 currentLat = position.coords.latitude;
@@ -117,40 +119,48 @@
             document.getElementById('current-lon').innerText = lon;
         }
 
-        // Hitung jarak menggunakan rumus Haversine
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; // Radius bumi dalam meter
-            const φ1 = lat1 * Math.PI / 180;
-            const φ2 = lat2 * Math.PI / 180;
-            const Δφ = (lat2 - lat1) * Math.PI / 180;
-            const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                      Math.cos(φ1) * Math.cos(φ2) *
-                      Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-            const distance = R * c;
-            return distance;
-        }
-
-        // Hitung jarak antara lokasi perangkat dan lokasi yang diinput
-        function calculateAndDisplayDistance(lat, lon) {
-            if (currentLat !== undefined && currentLon !== undefined) {
-                const distance = calculateDistance(currentLat, currentLon, lat, lon);
-                document.getElementById('distance').innerText = distance.toFixed(2);
-                console.log(`Distance to input location: ${distance.toFixed(2)} meters`);
-            } else {
-                console.log('Current location not available.');
+        // Fungsi untuk menghitung jarak
+        function calculateDistance(lat, lon) {
+            if (currentLat !== null && currentLon !== null) {
+                const point1 = [currentLat, currentLon];
+                const point2 = [lat, lon];
+                const distance = getDistance(point1, point2);
+                document.getElementById('distance').innerText = distance.toFixed(2); // Tampilkan jarak dengan 2 desimal
             }
         }
 
-        // Update lokasi saat bergerak (watchPosition)
+        // Fungsi untuk menghitung jarak antara dua titik dalam meter
+        function getDistance(point1, point2) {
+            const R = 6371000; // Radius Bumi dalam meter
+            const lat1 = point1[0] * Math.PI / 180;
+            const lat2 = point2[0] * Math.PI / 180;
+            const deltaLat = (point2[0] - point1[0]) * Math.PI / 180;
+            const deltaLon = (point2[1] - point1[1]) * Math.PI / 180;
+
+            const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+                      Math.cos(lat1) * Math.cos(lat2) *
+                      Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return R * c; // Jarak dalam meter
+        }
+
+        // Menyimpan referensi untuk entitas lokasi pengguna
+        let userLocationEntity;
+
         navigator.geolocation.watchPosition(
             (position) => {
                 currentLat = position.coords.latitude;
                 currentLon = position.coords.longitude;
                 updateCurrentLocation(currentLat, currentLon); // Memperbarui info lokasi saat ini
+
+                // Jika entitas lokasi pengguna sudah ada, hapus dan buat yang baru
+                if (userLocationEntity) {
+                    userLocationEntity.parentNode.removeChild(userLocationEntity);
+                }
+
+                // Membuat entitas lokasi pengguna yang baru
+                userLocationEntity = createEntity(currentLat, currentLon, "Your Location");
                 console.log(`Updated Location: ${currentLat}, ${currentLon}`);
             },
             (err) => {
@@ -162,6 +172,17 @@
                 maximumAge: 0
             }
         );
+
+        // Fungsi untuk memeriksa kedatangan
+        function checkArrival(lat, lon) {
+            const point1 = [currentLat, currentLon];
+            const point2 = [lat, lon];
+            const distance = getDistance(point1, point2);
+
+            if (distance <= 1) { // Jika jarak kurang dari atau sama dengan 1 meter
+                alert("Arrive"); // Tampilkan alert
+            }
+        }
     </script>
 </body>
 </html>
