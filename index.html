@@ -12,9 +12,11 @@
 </head>
 
 <body style="margin: 0; overflow: hidden">
-  <a-scene vr-mode-ui="enabled: false" embedded
-    arjs="sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: true;">
-    <a-camera gps-camera rotation-reader></a-camera>
+  <a-scene vr-mode-ui="enabled: false" arjs='sourceType: webcam; videoTexture: true; debugUIEnabled: false' renderer='antialias: true; alpha: true'> 
+    <a-camera gps-new-camera="gpsMinDistance: 5;" rotation-reader></a-camera>
+    <a-box id="ar-box" geometry='primitive: box' gps-new-entity-place="latitude: 0; longitude: 0" scale="15 15 15"
+      material="color: red;" look-at = "[gps-new-camera]" visible="false">
+    </a-box>
   </a-scene>
 
   <!-- Info lokasi sekarang -->
@@ -60,12 +62,15 @@
     function addLocation() {
       const lat = parseFloat(document.getElementById("latitude").value);
       const lon = parseFloat(document.getElementById("longitude").value);
+      const entity = document.getElementById('ar-box');
 
       if (!isNaN(lat) && !isNaN(lon)) {
         locations.push({ latitude: lat, longitude: lon });
-        createEntity(lat, lon, "Here");
+        //createEntity(lat, lon, "Here");
         calculateDistance(lat, lon);
         //checkArrival(lat, lon);
+        entity.setAttribute('gps-new-entity-place', `latitude: ${lat}; longitude: ${lon};`);
+        entity.setAttribute('visible', 'true');
         const distance = calculateDistance(lat, lon);
         const isArrive = checkArrival(lat, lon, distance);
         sendLocationToBackend(
@@ -111,7 +116,8 @@
     function clearLocations() {
       locations.length = 0;
       const scene = document.querySelector("a-scene");
-      const entities = scene.querySelectorAll("a-box, a-text");
+      const entities = scene.querySelectorAll("a-box");
+      //const entities = scene.querySelectorAll("a-box, a-text");
       entities.forEach((entity) => entity.parentNode.removeChild(entity));
       console.log("All locations cleared");
     }
