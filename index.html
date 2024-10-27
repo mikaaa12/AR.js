@@ -17,7 +17,7 @@
 
 <body style="margin: 0; overflow: hidden">
   <a-scene vr-mode-ui="enabled: false" arjs='sourceType: webcam; videoTexture: true; debugUIEnabled: false' renderer='antialias: true; alpha: true'> 
-    <a-camera gps-new-camera="gpsMinDistance: 5;" rotation-reader></a-camera>
+    <a-camera gps-new-camera="gpsMinDistance: 10;" rotation-reader></a-camera>
     <a-box id="ar-box" geometry='primitive: box' gps-new-entity-place="latitude: 0; longitude: 0" scale="15 15 15"
       material="color: red;" look-at = "[gps-new-camera]" visible="false">
     </a-box>
@@ -220,18 +220,10 @@
       (position) => {
         const newLat = position.coords.latitude;
         const newLon = position.coords.longitude;
-        currentLat = position.coords.latitude;
-        currentLon = position.coords.longitude;
+        //currentLat = position.coords.latitude;
+        //currentLon = position.coords.longitude;
         updateCurrentLocation(currentLat, currentLon);
 
-        // console.log(`Updated Location: ${currentLat}, ${currentLon}`);
-        // locations.forEach(location => {
-        //   const distance = calculateDistance(location.latitude, location.longitude);
-        //   if (distance > 2) { // threshold, bisa disesuaikan
-        //   const isArrive = checkArrival(location.latitude, location.longitude, distance);
-        //   sendLocationToBackend(currentLat, currentLon, location.latitude, location.longitude, distance, isArrive);
-        // }
-        // });
         if (Math.abs(newLat - currentLat) > 0.0001 || Math.abs(newLon - currentLon) > 0.0001) {
         currentLat = newLat;
         currentLon = newLon;
@@ -240,7 +232,7 @@
         console.log(`Updated Location: ${currentLat}, ${currentLon}`);
         locations.forEach(location => {
         const distance = calculateDistance(location.latitude, location.longitude);
-        if (distance > 2) { // threshold, bisa disesuaikan
+        if (distance >= 2) { // threshold, bisa disesuaikan
           const isArrive = checkArrival(location.latitude, location.longitude, distance);
           sendLocationToBackend(currentLat, currentLon, location.latitude, location.longitude, distance, isArrive);
         }
