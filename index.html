@@ -123,8 +123,8 @@
     }
 
     function throttledUpdateBackend(currentLat, currentLon, lat, lon, distance, isArrive) {
-      const minDistance = 5;
-      const throttleTime = 30000;
+      const minDistance = 1;
+      const throttleTime = 3000;
       const now = Date.now();
 
       if ((distance >= minDistance && now - lastUpdateTime > throttleTime) || lastUpdateTime === 0) {
