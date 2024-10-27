@@ -14,18 +14,11 @@
 <body style="margin: 0; overflow: hidden">
   <a-scene vr-mode-ui="enabled: false" embedded
     arjs="sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: true;">
-    <a-camera gps-camera rotation-reader></a-camera>
+    <a-camera gps-new-camera rotation-reader id="gps-camera"></a-camera>
   </a-scene>
 
   <!-- Info lokasi sekarang -->
-  <div id="current-location" style="
-        position: absolute;
-        bottom: 10px;
-        left: 10px;
-        background: white;
-        padding: 10px;
-        z-index: 10;
-      ">
+  <div id="current-location" style="position: absolute; bottom: 10px; left: 10px; background: white; padding: 10px; z-index: 10;">
     <p>Current Location:</p>
     <p>Latitude: <span id="current-lat">-</span></p>
     <p>Longitude: <span id="current-lon">-</span></p>
@@ -33,14 +26,7 @@
   </div>
 
   <!-- Form untuk input latitude dan longitude -->
-  <div style="
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        background: white;
-        padding: 10px;
-        z-index: 10;
-      ">
+  <div style="position: absolute; top: 10px; left: 10px; background: white; padding: 10px; z-index: 10;">
     <label>Latitude:</label>
     <input type="number" id="latitude" step="any" placeholder="e.g., -6.200000" />
     <br />
@@ -56,6 +42,8 @@
     let currentLat = null;
     let currentLon = null;
     let isArrive = false;
+    let userLocationEntity;
+    let lastUpdateTime = 0;
 
     function addLocation() {
       const lat = parseFloat(document.getElementById("latitude").value);
@@ -64,18 +52,9 @@
       if (!isNaN(lat) && !isNaN(lon)) {
         locations.push({ latitude: lat, longitude: lon });
         createEntity(lat, lon, "Here");
-        calculateDistance(lat, lon);
-        //checkArrival(lat, lon);
         const distance = calculateDistance(lat, lon);
         const isArrive = checkArrival(lat, lon, distance);
-        sendLocationToBackend(
-          currentLat,
-          currentLon,
-          lat,
-          lon,
-          distance,
-          isArrive
-        );
+        throttledUpdateBackend(currentLat, currentLon, lat, lon, distance, isArrive);
         console.log(`Added location: ${lat}, ${lon}`);
       } else {
         alert("Please enter both latitude and longitude.");
@@ -86,23 +65,19 @@
       const scene = document.querySelector("a-scene");
 
       const box = document.createElement("a-box");
-      box.setAttribute(
-        "gps-entity-place",
-        `latitude: ${lat}; longitude: ${lon};`
-      );
+      box.setAttribute("gps-entity-place", `latitude: ${lat}; longitude: ${lon};`);
       box.setAttribute("scale", "5 5 5");
       box.setAttribute("material", "color: red;");
       box.setAttribute("visible", "true");
+      box.setAttribute("look-at", "#gps-camera");
 
       const text = document.createElement("a-text");
       text.setAttribute("value", label);
-      text.setAttribute(
-        "gps-entity-place",
-        `latitude: ${lat}; longitude: ${lon};`
-      );
+      text.setAttribute("gps-entity-place", `latitude: ${lat}; longitude: ${lon};`);
       text.setAttribute("scale", "5 5 5");
       text.setAttribute("align", "center");
       text.setAttribute("position", "0 3 0");
+      text.setAttribute("look-at", "#gps-camera");
 
       scene.appendChild(box);
       scene.appendChild(text);
@@ -115,24 +90,6 @@
       entities.forEach((entity) => entity.parentNode.removeChild(entity));
       console.log("All locations cleared");
     }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        currentLat = position.coords.latitude;
-        currentLon = position.coords.longitude;
-        createEntity(currentLat, currentLon, "Your Location");
-        updateCurrentLocation(currentLat, currentLon);
-        console.log(`Your Location: ${currentLat}, ${currentLon}`);
-      },
-      (err) => {
-        console.error("Error accessing location: ", err);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      }
-    );
 
     function updateCurrentLocation(lat, lon) {
       document.getElementById("current-lat").innerText = lat;
@@ -157,30 +114,29 @@
       const deltaLat = ((point2[0] - point1[0]) * Math.PI) / 180;
       const deltaLon = ((point2[1] - point1[1]) * Math.PI) / 180;
 
-      const a =
-        Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-        Math.cos(lat1) *
-        Math.cos(lat2) *
-        Math.sin(deltaLon / 2) *
-        Math.sin(deltaLon / 2);
+      const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+        Math.cos(lat1) * Math.cos(lat2) *
+        Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
       return R * c;
     }
 
-    function sendLocationToBackend(
-      currentLat,
-      currentLon,
-      lat,
-      lon,
-      distance,
-      isArrive
-    ) {
+    function throttledUpdateBackend(currentLat, currentLon, lat, lon, distance, isArrive) {
+      const minDistance = 5;
+      const throttleTime = 30000;
+      const now = Date.now();
+
+      if ((distance >= minDistance && now - lastUpdateTime > throttleTime) || lastUpdateTime === 0) {
+        sendLocationToBackend(currentLat, currentLon, lat, lon, distance, isArrive);
+        lastUpdateTime = now;
+      }
+    }
+
+    function sendLocationToBackend(currentLat, currentLon, lat, lon, distance, isArrive) {
       fetch("https://projectar-ebd4b769bbda.herokuapp.com/api/location", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           currentLat: currentLat,
           currentLon: currentLon,
@@ -204,8 +160,6 @@
       return false;
     }
 
-    let userLocationEntity;
-
     navigator.geolocation.watchPosition(
       (position) => {
         currentLat = position.coords.latitude;
@@ -221,22 +175,17 @@
         console.log(`Updated Location: ${currentLat}, ${currentLon}`);
         locations.forEach(location => {
           const distance = calculateDistance(location.latitude, location.longitude);
-          if (distance > 2) { // threshold, bisa disesuaikan
-          const isArrive = checkArrival(location.latitude, location.longitude, distance);
-          sendLocationToBackend(currentLat, currentLon, location.latitude, location.longitude, distance, isArrive);
-        }
+          if (distance > 2) {
+            const isArrive = checkArrival(location.latitude, location.longitude, distance);
+            throttledUpdateBackend(currentLat, currentLon, location.latitude, location.longitude, distance, isArrive);
+          }
         });
       },
       (err) => {
         console.error("Error watching location: ", err);
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
-
 
   </script>
 </body>
