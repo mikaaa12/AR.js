@@ -8,6 +8,10 @@
   <!-- A-Frame Library -->
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
   <!-- AR.js for A-Frame -->
+  <script
+      type="text/javascript"
+      src="https://raw.githack.com/AR-js-org/AR.js/master/three.js/build/ar-threex-location-only.js"
+    ></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 </head>
 
@@ -57,7 +61,7 @@
     const locations = [];
     let currentLat = null;
     let currentLon = null;
-    let isArrive = false;
+    let isArrive = {};
 
     function addLocation() {
       const lat = parseFloat(document.getElementById("latitude").value);
@@ -86,6 +90,7 @@
         alert("Please enter both latitude and longitude.");
       }
     }
+
 
     function createEntity(lat, lon, label) {
       const scene = document.querySelector("a-scene");
@@ -119,6 +124,9 @@
       const entities = scene.querySelectorAll("a-box");
       //const entities = scene.querySelectorAll("a-box, a-text");
       entities.forEach((entity) => entity.parentNode.removeChild(entity));
+      const entity = document.getElementById("ar-box");
+      entity.setAttribute("visible", "false");
+
       console.log("All locations cleared");
     }
 
