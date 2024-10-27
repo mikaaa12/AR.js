@@ -14,7 +14,7 @@
 <body style="margin: 0; overflow: hidden">
   <a-scene vr-mode-ui="enabled: false" embedded
     arjs="sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: true;">
-    <a-camera gps-new-camera rotation-reader id="gps-camera"></a-camera>
+    <a-camera gps-camera rotation-reader></a-camera>
   </a-scene>
 
   <!-- Info lokasi sekarang -->
@@ -93,7 +93,6 @@
       box.setAttribute("scale", "5 5 5");
       box.setAttribute("material", "color: red;");
       box.setAttribute("visible", "true");
-      box.setAttribute("look-at", "#gps-camera");
 
       const text = document.createElement("a-text");
       text.setAttribute("value", label);
@@ -104,7 +103,6 @@
       text.setAttribute("scale", "5 5 5");
       text.setAttribute("align", "center");
       text.setAttribute("position", "0 3 0");
-      text.setAttribute("look-at", "#gps-camera");
 
       scene.appendChild(box);
       scene.appendChild(text);
