@@ -192,6 +192,12 @@
         maximumAge: 3000,
       }
     );
+    window.addEventListener('gps-new-entity-place-added', (ev) => {
+          const entity = ev.detail.component.el;
+          console.log('Entity added at: ', entity.getAttribute('gps-new-entity-place'));
+          // Ensure the entity is visible after being added
+          entity.setAttribute('visible', 'true');
+      });
 
   </script>
 </body>
