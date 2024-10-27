@@ -81,6 +81,7 @@
     function clearLocations() {
       locations.length = 0;
       box.setAttribute("visible", "false");
+      document.getElementById("distance").innerText = "-"; // Reset the distance display
       console.log("All locations cleared");
     }
 
@@ -141,6 +142,31 @@
       box.setAttribute('scale', `${scale} ${scale} ${scale}`);
     }
 
+    function sendLocationToBackend(currentLat, currentLon, lat, lon, distance, isArrive) {
+      fetch("https://projectar-ebd4b769bbda.herokuapp.com/api/location", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          currentLat: currentLat,
+          currentLon: currentLon,
+          latitude: lat,
+          longitude: lon,
+          distance: distance,
+          isArrive: isArrive,
+        }),
+      })
+      .then((response) => response.json())
+      .then((data) => console.log("Data sent to backend:", data))
+      .catch((error) => console.error("Error sending data:", error));
+    }
+
+    function checkArrival(distance) {
+      const arrivalThreshold = 2; // meters
+      return distance <= arrivalThreshold;
+    }
+
     navigator.geolocation.watchPosition(
       (position) => {
         const newLat = position.coords.latitude;
@@ -151,6 +177,10 @@
         locations.forEach(location => {
           const distance = calculateDistance(location.latitude, location.longitude);
           updateBoxScale(distance); // Adjust box size based on distance
+          
+          // Check if arrived and send location data to the backend
+          const isArrive = checkArrival(distance);
+          sendLocationToBackend(currentLat, currentLon, location.latitude, location.longitude, distance, isArrive);
         });
       },
       (err) => {
