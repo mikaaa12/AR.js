@@ -61,72 +61,26 @@
     const locations = [];
     let currentLat = null;
     let currentLon = null;
-    let isArrive = {};
+    const box = document.getElementById('ar-box');
 
     function addLocation() {
       const lat = parseFloat(document.getElementById("latitude").value);
       const lon = parseFloat(document.getElementById("longitude").value);
-      const entity = document.getElementById('ar-box');
 
       if (!isNaN(lat) && !isNaN(lon)) {
         locations.push({ latitude: lat, longitude: lon });
-        //createEntity(lat, lon, "Here");
+        box.setAttribute('gps-new-entity-place', `latitude: ${lat}; longitude: ${lon};`);
+        box.setAttribute('visible', 'true');
         calculateDistance(lat, lon);
-        //checkArrival(lat, lon);
-        entity.setAttribute('gps-new-entity-place', `latitude: ${lat}; longitude: ${lon};`);
-        entity.setAttribute('visible', 'true');
-        const distance = calculateDistance(lat, lon);
-        const isArrive = checkArrival(lat, lon, distance);
-        sendLocationToBackend(
-          currentLat,
-          currentLon,
-          lat,
-          lon,
-          distance,
-          isArrive
-        );
         console.log(`Added location: ${lat}, ${lon}`);
       } else {
         alert("Please enter both latitude and longitude.");
       }
     }
 
-
-    function createEntity(lat, lon, label) {
-      const scene = document.querySelector("a-scene");
-
-      const box = document.createElement("a-box");
-      box.setAttribute(
-        "gps-entity-place",
-        `latitude: ${lat}; longitude: ${lon};`
-      );
-      box.setAttribute("scale", "5 5 5");
-      box.setAttribute("material", "color: red;");
-      box.setAttribute("visible", "true");
-
-      const text = document.createElement("a-text");
-      text.setAttribute("value", label);
-      text.setAttribute(
-        "gps-entity-place",
-        `latitude: ${lat}; longitude: ${lon};`
-      );
-      text.setAttribute("scale", "20 20 20");
-      text.setAttribute("align", "center");
-      text.setAttribute("position", "0 3 0");
-
-      scene.appendChild(box);
-      scene.appendChild(text);
-    }
-
     function clearLocations() {
       locations.length = 0;
-      const scene = document.querySelector("a-scene");
-      const entities = scene.querySelectorAll("a-box");
-      //const entities = scene.querySelectorAll("a-box, a-text");
-      entities.forEach((entity) => entity.parentNode.removeChild(entity));
-      const entity = document.getElementById("ar-box");
-      entity.setAttribute("visible", "false");
-
+      box.setAttribute("visible", "false");
       console.log("All locations cleared");
     }
 
@@ -134,7 +88,6 @@
       (position) => {
         currentLat = position.coords.latitude;
         currentLon = position.coords.longitude;
-        //createEntity(currentLat, currentLon, "Your Location");
         updateCurrentLocation(currentLat, currentLon);
         console.log(`Your Location: ${currentLat}, ${currentLon}`);
       },
@@ -165,7 +118,7 @@
     }
 
     function getDistance(point1, point2) {
-      const R = 6371000;
+      const R = 6371000; // Radius of Earth in meters
       const lat1 = (point1[0] * Math.PI) / 180;
       const lat2 = (point2[0] * Math.PI) / 180;
       const deltaLat = ((point2[0] - point1[0]) * Math.PI) / 180;
@@ -178,68 +131,27 @@
       return R * c;
     }
 
-    function sendLocationToBackend(
-      currentLat,
-      currentLon,
-      lat,
-      lon,
-      distance,
-      isArrive
-    ) {
-      fetch("https://projectar-ebd4b769bbda.herokuapp.com/api/location", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          currentLat: currentLat,
-          currentLon: currentLon,
-          latitude: lat,
-          longitude: lon,
-          distance: distance,
-          isArrive: isArrive,
-        }),
-      })
-        .then((response) => response.json())
-        .then((data) => console.log("Data sent to backend:", data))
-        .catch((error) => console.error("Error sending data:", error));
-    }
+    function updateBoxScale(distance) {
+      const minSize = 1; // Minimum scale size
+      const maxSize = 15; // Maximum scale size
+      const scaleRange = maxSize - minSize;
+      const maxDistance = 50; // Max distance for max size
+      const scale = Math.max(minSize, maxSize - (distance / maxDistance * scaleRange));
 
-    function checkArrival(lat, lon, distance) {
-      const arrivalThreshold = 2;
-      if (distance <= arrivalThreshold) {
-        alert("Arrived");
-        return true;
-      }
-      return false;
+      box.setAttribute('scale', `${scale} ${scale} ${scale}`);
     }
-
-    let userLocationEntity;
 
     navigator.geolocation.watchPosition(
       (position) => {
         const newLat = position.coords.latitude;
         const newLon = position.coords.longitude;
-        //currentLat = position.coords.latitude;
-        //currentLon = position.coords.longitude;
-        updateCurrentLocation(currentLat, currentLon);
 
-        if (Math.abs(newLat - currentLat) > 0.0001 || Math.abs(newLon - currentLon) > 0.0001) {
-        currentLat = newLat;
-        currentLon = newLon;
-        updateCurrentLocation(currentLat, currentLon);
+        updateCurrentLocation(newLat, newLon);
 
-        console.log(`Updated Location: ${currentLat}, ${currentLon}`);
         locations.forEach(location => {
-        const distance = calculateDistance(location.latitude, location.longitude);
-        if (distance <= 2) { // threshold, bisa disesuaikan
-          const isArrive = checkArrival(location.latitude, location.longitude, distance);
-          sendLocationToBackend(currentLat, currentLon, location.latitude, location.longitude, distance, isArrive);
-        }else{
-          sendLocationToBackend(currentLat, currentLon, location.latitude, location.longitude, distance, isArrive);
-        }
-      });
-    }
+          const distance = calculateDistance(location.latitude, location.longitude);
+          updateBoxScale(distance); // Adjust box size based on distance
+        });
       },
       (err) => {
         console.error("Error watching location: ", err);
@@ -250,7 +162,6 @@
         maximumAge: 3000,
       }
     );
-
 
   </script>
 </body>
